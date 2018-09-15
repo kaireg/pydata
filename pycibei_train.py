@@ -3,26 +3,26 @@
 
 import pymysql
 
-#mysql配置文件
-# config = {
-#     'host': 'rm-m5e7n2hx2bai082s2go.mysql.rds.aliyuncs.com',
-#     'port': 3306,
-#     'user': 'xibeidba',
-#     'passwd': 'xibei_DBA',
-#     'db':'train_data',
-#     'charset':'utf8',
-#     'cursorclass':pymysql.cursors.DictCursor
-#     }
-
+# mysql配置文件
 config = {
-    'host': 'rm-m5ew4zoeeig0aft95do.mysql.rds.aliyuncs.com',
+    'host': 'rm-m5e7n2hx2bai082s2go.mysql.rds.aliyuncs.com',
     'port': 3306,
-    'user': 'xibei_ljk',
-    'passwd': 'W2rL!79VUrUv^XD9',
-    'db':'cibei_data',
+    'user': 'xibeidba',
+    'passwd': 'xibei_DBA',
+    'db':'train_data',
     'charset':'utf8',
     'cursorclass':pymysql.cursors.DictCursor
     }
+
+# config = {
+#     'host': 'rm-m5ew4zoeeig0aft95do.mysql.rds.aliyuncs.com',
+#     'port': 3306,
+#     'user': 'xibei_ljk',
+#     'passwd': 'W2rL!79VUrUv^XD9',
+#     'db':'cibei_data',
+#     'charset':'utf8',
+#     'cursorclass':pymysql.cursors.DictCursor
+#     }
 
 conn = pymysql.connect(**config)
 conn.autocommit(1)
