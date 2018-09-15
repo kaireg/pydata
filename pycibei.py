@@ -89,11 +89,11 @@ if __name__ == '__main__':
     print '---------------------------------'
     retail = input('please input retail code:')
     product = input('please input product code:')
+    check = checkdata(conn,cursor,retail,product)
+    product_data = check.check_product()
     print u'您需要核验的门店编码为:',retail
     print u'您需要核验的物资编码为:' ,product
     print '---------------------------------'
-    check = checkdata(conn,cursor,retail,product)
-    product_data = check.check_product()
     if len(product_data):
         print u'您核验的物资存在有效:'
         for data in product_data:
@@ -106,7 +106,6 @@ if __name__ == '__main__':
             
     else:
         print u'您核验的物资不存在'
-    print u'物资大类: ',category_code
     print '---------------------------------'
     unit_data= check.check_unit()
     if len(unit_data)  :
