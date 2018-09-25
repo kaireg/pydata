@@ -43,8 +43,8 @@ class checkdata:
         return data_product
 
     def check_unit(self):
-        # 查询项目主文件
-        self.cursor.execute('SELECT product_code,unit_code_from,unit_code_to FROM com_data_unit_converse where product_code=%s', (self.product))
+        # 查询计量单位转换
+        self.cursor.execute('select product_code,unit_code_from,unit_code_to FROM com_data_unit_converse where product_code=%s', (self.product))
         data_product=self.cursor.fetchall()
         return data_product
 
@@ -103,13 +103,11 @@ if __name__ == '__main__':
     if len(product_data):
         print u'您核验的物资存在有效:'
         for data in product_data:
-            print u'物资编码：',data['product_code']
             print u'物资名称: ',data['product_name']
             print u'主计量单位',data['unit_code']
             print u'采购单位  ',data['buy_unit_code']
             print u'部件单位  ',data['part_unit_code']
             category_code = data['max_category_code']
-            
     else:
         print u'您核验的物资不存在'
     print '---------------------------------'
@@ -117,7 +115,6 @@ if __name__ == '__main__':
     if len(unit_data)  :
         print u'维护的计量单位转换关系如下:'
         for data in unit_data:
-            print u'物资编码：', data['product_code']
             print u'转换前单位:',data['unit_code_from']
             print u'转换后单位:',data['unit_code_to']
     else:
