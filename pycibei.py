@@ -134,8 +134,8 @@ if __name__ == '__main__':
     print '---------------------------------'
     zb_data = check.check_zb()
     if len(zb_data):
-        print u'您核验的门店配置的支部如下:'
-        for data in org_data:
+        print u'您核验的门店支部信息如下:'
+        for data in zb_data:
             print u'支部编码：',data['code']
             print u'支部名称: ',data['name']
     else:
