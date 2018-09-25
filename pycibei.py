@@ -54,6 +54,12 @@ class checkdata:
         data_org=self.cursor.fetchall()
         return data_org
     
+    def check_zb(self):
+        # 查询门店支部
+        self.cursor.execute("select code,name from com_data_org where code in (SELECT parent_org_code FROM `com_data_org_relation`  dr where  type='YY' and dr.child_org_code=%s )",  (self.retail))
+        data_org=self.cursor.fetchall()
+        return data_org
+
     def check_provider(self):
         # 查询供应商数据
         self.cursor.execute('select PRODUCT_CODE,RETAIL_CODE,provider_code,relation_status,priority from com_data_product_provider where  RETAIL_CODE=%s and PRODUCT_CODE= %s ',  (self.retail,self.product) )
@@ -125,6 +131,15 @@ if __name__ == '__main__':
             print u'法人公司名称: ',data['name']
     else:
         print u'您核验的门店木有配置法人公司'
+    print '---------------------------------'
+    zb_data = check.check_zb()
+    if len(zb_data):
+        print u'您核验的门店配置的支部如下:'
+        for data in org_data:
+            print u'支部编码：',data['code']
+            print u'支部名称: ',data['name']
+    else:
+        print u'您核验的门店木有爹'
     print '---------------------------------'
     rel_data= check.check_select(sql_list[0])
     if len(rel_data) :
