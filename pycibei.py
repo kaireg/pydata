@@ -42,6 +42,12 @@ class checkdata:
         data_product=self.cursor.fetchall()
         return data_product
 
+    def check_product_cat(self):
+        # 查询物资分类
+        self.cursor.execute("SELECt `level`,category_code,category_name from com_data_product_category where category_code in (select max_category_code  from com_data_product where product_code=%s UNION select mid_category_code from com_data_product where product_code=%s UNION select category_code from com_data_product where product_code=%s)", (self.product,self.product,self.product))
+        cat_product=self.cursor.fetchall()
+        return cat_product
+
     def check_unit(self):
         # 查询计量单位转换
         self.cursor.execute('select product_code,unit_code_from,unit_code_to FROM com_data_unit_converse where product_code=%s', (self.product))
@@ -119,7 +125,14 @@ if __name__ == '__main__':
             print u'转换后单位:',data['unit_code_to']
     else:
         print u'木有维护计量单位转换关系'
-    print '---------------------------------' 
+    print '---------------------------------'
+    cat_data = check.check_product_cat()
+    for data in cat_data:
+            print u'物资类别级别：',data['level']
+            print u'物资类别编码: ',data['category_code']
+            print u'物资类别名称: ',data['category_name']
+            print '       -----------         '
+    print '---------------------------------'
     org_data = check.check_org()
     if len(org_data):
         print u'您核验的门店配置的法人公司如下:'
