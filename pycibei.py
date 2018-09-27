@@ -97,7 +97,9 @@ if __name__ == '__main__':
     'select provider_code,price_group_id,price,unit_code,valid_date,invalid_date from com_data_retail_bug_price where price_group_id in  ( SELECT price_group_id from com_data_price_group_retails where  retail_code=%s) and PRODUCT_CODE=%s',
     'select provider_code,price,unit_code,valid_date,invalid_date from com_data_retail_bug_price where retail_code=%s and product_code=%s',
     "select provider_code,provider_name FROM com_data_provider where provider_code in (select PROVIDER_CODE from com_data_product_provider where  RETAIL_CODE=%s and  PRODUCT_CODE=%s and relation_status='Y' )",
-    'select product_code,retail_code,provider_code,relation_status from com_data_product_provider where  RETAIL_CODE=%s and PRODUCT_CODE= %s ']
+    'select product_code,retail_code,provider_code,relation_status from com_data_product_provider where  RETAIL_CODE=%s and PRODUCT_CODE= %s ',
+    'select code,name from com_data_storage where `code` in (SELECT storeage_code from com_data_product_store_relation where  retail_code=%s  and product_code=%s)',
+    ]
     print '---------------------------------'
     retail = input('please input retail code:')
     product = input('please input product code:')
@@ -180,7 +182,14 @@ if __name__ == '__main__':
                 print u'木有配置物资门店仓库关系'
     else:
         print u'木有配置物资与门店关系'
-    print '---------------------------------'   
+    print '---------------------------------'
+    store_data = check.check_select(sql_list[7])
+    if len(store_data):
+        for data in store_data:
+            print u'配送仓库名称为:',data['name']
+    else:
+        print u'未配置仓库主数据'
+    print '---------------------------------'
     pv_data = check.check_provider()   
     if len(pv_data) > 1 :
         print u'存在多个供应商:'
