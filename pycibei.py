@@ -2,8 +2,9 @@
 # -*- coding: UTF-8 -*-
 
 import pymysql
+import datetime
 
-#mysql配置文件
+# mysql配置文件
 # config = {
 #     'host': 'rm-m5e7n2hx2bai082s2go.mysql.rds.aliyuncs.com',
 #     'port': 3306,
@@ -59,7 +60,32 @@ class checkdata:
         self.cursor.execute("select code,name from com_data_org where CODE in (select parent_org_code from com_data_org_relation where type='FR'and child_org_code=%s)",  (self.retail))
         data_org=self.cursor.fetchall()
         return data_org
+
+    def check_delv(self):
+        # 查询门店组织
+        sq ='''
+        SELECT RETAIL_NAME mdmc,PROVIDER_NAME gys,pc.CATEGORY_NAME wzlb,'每天' bfsj,CONCAT('T+',REQUIRE_TIME) bhgz,
+        REFERENCE_DATE jzsj FROM com_data_delivery_cycles  dc,com_data_product_category pc  where 
+        dc.CATEGORY_CODE=pc.category_code and 
+        RETAIL_CODE=%s and REFERENCE_UNIT='EVERY_MONTH'
+        group by RETAIL_NAME,PROVIDER_NAME,pc.CATEGORY_NAME,CONCAT('T+',REQUIRE_TIME) ,REFERENCE_DATE
+        UNION
+        SELECT RETAIL_NAME mdmc,PROVIDER_NAME gys,pc.CATEGORY_NAME wzlb,CONCAT('周',REFERENCE_POINT) bfsj,CONCAT('T+',REQUIRE_TIME) bhgz,
+        REFERENCE_DATE jzsj FROM com_data_delivery_cycles  dc,com_data_product_category pc where 
+        dc.CATEGORY_CODE=pc.category_code and 
+        RETAIL_CODE=%s and REFERENCE_UNIT='EVERY_WEEK'
+        group by RETAIL_NAME,PROVIDER_NAME,pc.CATEGORY_NAME,CONCAT('T+',REQUIRE_TIME),REFERENCE_POINT 
+        '''
+        self.cursor.execute(sq,(self.retail,self.retail))
+        data_org=self.cursor.fetchall()
+        return data_org
     
+    def check_org_gs(self):
+        # 查询门店基础信息
+        self.cursor.execute("select code,name,account_number,area,distribution_company,rc.on_line_time from com_data_org dd , com_data_retail_config rc  where  dd.code=rc.retail_code and code=%s",  (self.retail))
+        data_orgs=self.cursor.fetchall()
+        return data_orgs
+
     def check_zb(self):
         # 查询门店支部
         self.cursor.execute("select code,name from com_data_org where code in (SELECT parent_org_code FROM `com_data_org_relation`  dr where  type='YY' and dr.child_org_code=%s )",  (self.retail))
@@ -68,7 +94,7 @@ class checkdata:
 
     def check_provider(self):
         # 查询供应商数据
-        self.cursor.execute('select PRODUCT_CODE,RETAIL_CODE,provider_code,relation_status,priority from com_data_product_provider where  RETAIL_CODE=%s and PRODUCT_CODE= %s ',  (self.retail,self.product) )
+        self.cursor.execute('SELECT pp.PRODUCT_CODE PRODUCT_CODE,pp.RETAIL_CODE RETAIL_CODE,pp.provider_code provider_code,dp.provider_name provider_name,pp.relation_status relation_status,pp.priority priority FROM com_data_product_provider pp LEFT JOIN com_data_provider dp ON dp.provider_code = pp.provider_code  WHERE RETAIL_CODE=%s and PRODUCT_CODE= %s ',  (self.retail,self.product) )
         data=self.cursor.fetchall()
         return data
 
@@ -80,15 +106,29 @@ class checkdata:
     
     def check_delivery(self):
         # 查询配送商
-        self.cursor.execute('select provider_code,product_code,store_code,relation_status,priority from com_data_product_provider where store_code in (select storeage_code from com_data_product_store_relation where  RETAIL_CODE=%s and  PRODUCT_CODE=%s) and product_code=%s',(self.retail,self.product,self.product))
+        self.cursor.execute('select pp.provider_code,dp.provider_name,pp.product_code,pp.store_code,pp.relation_status,pp.priority from com_data_product_provider pp left join com_data_provider dp on pp.provider_code=dp.provider_code where store_code in (select storeage_code from com_data_product_store_relation where  RETAIL_CODE=%s and  PRODUCT_CODE=%s) and product_code=%s',(self.retail,self.product,self.product))
         dvdata=self.cursor.fetchall()
         return dvdata
-
+    
     def close(self):
         # 关闭游标连接
         self.cursor.close()
         # 关闭数据库连接
         self.conn.close()
+
+def myAlign(string, length=0):
+    	if length == 0:
+		return string
+	slen = len(string)
+	re = string
+	if isinstance(string, str):
+		placeholder = ' '
+	else:
+		placeholder = u'　'
+	while slen < length:
+		re += placeholder
+		slen += 1
+	return re
 
 if __name__ == '__main__':
     sql_list = ['select product_code,retail_code,relation_status,delivery_type from com_data_product_retial_relation where RETAIL_CODE=%s and PRODUCT_CODE=%s',
@@ -103,6 +143,8 @@ if __name__ == '__main__':
     print '---------------------------------'
     retail = input('please input retail code:')
     product = input('please input product code:')
+    # retail = '20026'
+    # product = '11100010'
     check = checkdata(conn,cursor,retail,product)
     product_data = check.check_product()
     print u'您需要核验的门店编码为:',retail
@@ -135,6 +177,19 @@ if __name__ == '__main__':
             print u'物资类别名称: ',data['category_name']
             print '       -----------         '
     print '---------------------------------'
+    orgs_data = check.check_org_gs()
+    if len(orgs_data):
+        print u'您核验的门店基础信息如下:'
+        for data in orgs_data:
+            print u'门店编码：',data['code']
+            print u'门店名称: ',data['name']
+            print u'帐套: ',data['account_number']
+            print u'区域: ',data['area']
+            print u'上传至: ',data['distribution_company']
+            print u'上线时间: ',data['on_line_time']
+    else:
+        print u'您核验的门店木有配置法人公司'
+    print '---------------------------------'
     org_data = check.check_org()
     if len(org_data):
         print u'您核验的门店配置的法人公司如下:'
@@ -143,6 +198,19 @@ if __name__ == '__main__':
             print u'法人公司名称: ',data['name']
     else:
         print u'您核验的门店木有配置法人公司'
+    print '---------------------------------'
+    delv_data = check.check_delv()
+    if len(delv_data):
+        print u'您核验的门店配置的到货规则如下:'
+        for data in delv_data:
+            print u'门店名称：',myAlign(data['mdmc'],8),
+            print u'供应商: ',myAlign(data['gys'],9),
+            print u'物资类别: ',myAlign(data['wzlb'],7),
+            print u'报货时间: ',data['bfsj'],
+            print u'报货规则：',data['bhgz'],
+            print u'截止时间: ',data['jzsj'].strftime('%H:%M:%S')
+    else:
+        print u'您核验的门店木有配置到货规则'
     print '---------------------------------'
     zb_data = check.check_zb()
     if len(zb_data):
@@ -178,29 +246,30 @@ if __name__ == '__main__':
                 for data in sto_data:
                     print u'配送仓库为:', data['storeage_code']
                     print u'物资门店仓库关系状态为:', data['relation_status']
+                    store_data = check.check_select(sql_list[7])
+                print '       -----------         '
+                if len(store_data):
+                    for data in store_data:
+                        print u'配送仓库名称为:',data['name']
+                else:
+                    print u'未配置仓库主数据'
+                    print '---------------------------------'
             else:
                 print u'木有配置物资门店仓库关系'
     else:
         print u'木有配置物资与门店关系'
     print '---------------------------------'
-    store_data = check.check_select(sql_list[7])
-    if len(store_data):
-        for data in store_data:
-            print u'配送仓库名称为:',data['name']
-    else:
-        print u'未配置仓库主数据'
-    print '---------------------------------'
     pv_data = check.check_provider()   
     if len(pv_data) > 1 :
         print u'存在多个供应商:'
         for data in pv_data:
-            print u'供应商编码：',data['provider_code'],
+            print u'供应商编码：',data['provider_code'],u'供应商名字:',data['provider_name'],
             print u'状态:', data['relation_status'],
             print u'优先级',data['priority']
     elif len(pv_data) == 1 :
         print u'只有一个供应商:'
         for data in pv_data:
-            print u'供应商编码：' ,data['provider_code'],
+            print u'供应商编码：' ,data['provider_code'],u'供应商名字:',data['provider_name'],
             print u'状态:' ,data['relation_status'],
             print u'优先级',data['priority']
     else:
@@ -236,11 +305,11 @@ if __name__ == '__main__':
         if len(dv_data) > 1 :
             print u'存在多个配送商:'
             for data in dv_data:
-                print u'配送商编码：', data['provider_code'],u'仓库编码:',data['store_code'],u'状态:' , data['relation_status'],u'优先级:',data['priority']
+                print u'配送商编码：', data['provider_code'],u'配送商名字:',data['provider_name'],u'仓库编码:',data['store_code'],u'状态:' , data['relation_status'],u'优先级:',data['priority']
         elif len(dv_data) == 1 :
             print u'只存在一个配送商:'
             for data in dv_data:
-                print u'配送商编码：',data['provider_code'], u'仓库编码:' ,data['store_code'], u'状态:' ,data['relation_status'], u'优先级:',data['priority']
+                print u'配送商编码：',data['provider_code'],u'配送商名字:',data['provider_name'],u'仓库编码:' ,data['store_code'], u'状态:' ,data['relation_status'], u'优先级:',data['priority']
         else:
             print u'木有查询到配送商'        
     else:
